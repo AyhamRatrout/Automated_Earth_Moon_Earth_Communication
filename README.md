@@ -1,4 +1,4 @@
-# Automated Earth-Moon-Earth "Moonbounce" Communication
+# <h1 style="text-align: center;">Automated Earth-Moon-Earth "Moonbounce" Communication</h1>
 
 ## Team Members
 * Ayham Ratrout
