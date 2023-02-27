@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from foo import .
+from moonbouncer.moonbouncer_app import MoonbouncerApp
 
 if __name__ == "__main__":
-    pass
+    MoonbouncerApp().run()
