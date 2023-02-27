@@ -5,9 +5,9 @@
 * Cole Reinholt
 * Bethany Kavanagh
 
-## Supervisor
-Professor David Kazdan
-Professor Gregory Lee
+## Supervisors
+* Professor David Kazdan
+* Professor Gregory Lee
 
 ## Purpose
 The purpose of this project is to develop a system that allows Case Western Reserve University’s Amateur Radio Club to automatically locate and reflect a 2 meter radio signal off of the moon. The Amateur Radio Club’s existing mount solution is electrically powered and uses two servo motors. However, as of right now, the servo motors are manually controlled thus requiring constant manual adjustment to track objects as they move across the sky. As a result of this, the Amateur Radio Club has been rather unsuccessful locating the moon and reflecting 2 meter radio waves off of it as they managed to accomplish Earth-Moon-Earth (EME) communication only once since the device was first deployed. 
