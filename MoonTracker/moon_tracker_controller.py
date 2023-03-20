@@ -8,6 +8,8 @@ TRACKER_STATE_FILENAME = "tracker_state"
 
 MQTT_CLIENT_ID = "tracker_controller"
 
+FP_DIGITS = 2
+
 
 class InvalidTrackerConfig(Exception):
     pass
@@ -23,6 +25,16 @@ class MoonTrackerController(object):
         self.tracker_driver = MoonTrackerDriver()
         self._client = self._create_and_configure_broker_client()
         self.db = shelve.open(TRACKER_STATE_FILENAME, writeback=True)
+        if 'azimuth' not in self.db:
+            self.db['azimuth'] = 0.0
+        if 'elevation' not in self.db:
+            self.db['elevation'] = 0.0
+        if 'reset' not in self.db:
+            self.db['reset'] = False
+        if 'client' not in self.db:
+            self.db['client'] = ''
+
+        # update hardware here
 
     def _create_and_configure_broker_client(self):
         client = mqtt.Client(client_id=MQTT_CLIENT_ID, protocol=MQTT_VERSION)
@@ -64,17 +76,28 @@ class MoonTrackerController(object):
         return self.db['azimuth']
 
     def set_current_azimuth(self, new_azimuth):
-        pass
+        if new_azimuth < 0.0 or new_azimuth > 360.0:
+            raise InvalidTrackerConfig()
+        self.db['azimuth'] = round(new_azimuth, FP_DIGITS)
+        # update driver
 
     def get_current_elevation(self):
         return self.db['elevation']
 
     def set_current_elevation(self, new_elevation):
-        pass
+        if new_elevation < 0.0 or new_elevation > 180.0:
+            raise InvalidTrackerConfig()
+        self.db['elevation'] = round(new_elevation, FP_DIGITS)
+        # update hardware
 
     def get_current_reset_status(self):
         return self.db['reset']
 
     def set_current_reset_status(self, new_reset_status):
-        pass
+        if new_reset_status not in [True, False]:
+            raise InvalidTrackerConfig()
+        self.db['status'] = new_reset_status
+        self.set_current_elevation(0.0)
+        self.set_current_azimuth(0.0)
+
 
