@@ -1,0 +1,95 @@
+#!/usr/bin/env python3
+import json
+import sys
+import argparse
+from time import sleep
+import paho.mqtt.publish as mqtt_publish
+from paho.mqtt.client import Client
+from moon_tracker_common import *
+
+class MoonTrackerCmd(object):
+
+    def __init__(self):
+        self.received_tracker_state = None #{'azimuth': 20, 'elevation': 30, 'reset': False}
+        self.client = Client()
+        self.client.enable_logger()
+        self.client.on_connect = self.on_connect
+        self.client.connect(MQTT_BROKER_HOST,
+                            port=MQTT_BROKER_PORT,
+                            keepalive=MQTT_BROKER_KEEP_ALIVE_SECS)
+        self._wait_for_tracker_state()
+        self.client.loop_start()
+
+    def build_argument_parser(self):
+
+        def azimuth_range(value):
+            value = float(value)
+            if (0.0 > value or value > 360.0):
+                raise argparse.ArgumentTypeError('Azimuth angle must be between 0.0 and 360.0 degrees')
+            return value
+
+        def elevation_range(value):
+            value = float(value)
+            if (0.0 > value or value > 180.0):
+                raise argparse.ArgumentTypeError('Elevation angle must be between 0.0 and 180.0 degrees')
+            return value
+
+        parser = argparse.ArgumentParser()
+
+        parser.add_argument('-a', '--azimuth', default=None,
+                            type=azimuth_range, help='Azimuth angle between 0.0 and 360.0 degrees.')
+        parser.add_argument('-e', '--elevation', default=None,
+                            type=elevation_range, help='Elevation angle between 0.0 and 180.0 degrees.')
+        parser.add_argument('-r', '--reset', action='store_true', default=False,
+                            help="Resets the tracker's position if set to true")
+
+        return parser
+
+    def _receive_tracker_state(self, client, userdata, message):
+        self.received_tracker_state = json.loads(message.payload.decode('utf-8'))
+
+    def _print_tracker_state(self):
+        print("Azimuth: {} Elevation: {} Reset: {}".format(
+            self.received_tracker_state['azimuth'],
+            self.received_tracker_state['elevation'],
+            self.received_tracker_state['reset']))
+
+    def on_connect(self, client, userdata, flags, rc):
+        client.message_callback_add(TOPIC_TRACKER_CHANGE_NOTIFICATION,
+                                    self._receive_tracker_state)
+        client.subscribe(TOPIC_TRACKER_CHANGE_NOTIFICATION)
+
+    def update_tracker_state(self):
+        args = self.build_argument_parser().parse_args()
+
+        if args.azimuth is not None:
+            self.received_tracker_state['azimuth'] = args.azimuth
+        if args.elevation is not None:
+            self.received_tracker_state['elevation'] = args.elevation
+        if args.reset is not None:
+            self.received_tracker_state['reset'] = args.reset
+
+        self.client.publish(TOPIC_SET_TRACKER_CONFIG,
+                            json.dumps(self.received_tracker_state
+                                ).encode('utf-8'))
+        sleep(0.1)
+        self.client.loop_stop()
+
+    def _wait_for_tracker_state(self):
+        for _ in range(10):
+            if self.received_tracker_state:
+                return
+            self.client.loop(timeout=0.05)
+        raise Exception("Timeout waiting for tracker state")
+
+
+def main():
+    tracker_cmd = MoonTrackerCmd()
+
+    if len(sys.argv) > 1:
+        tracker_cmd.update_tracker_state()
+    else:
+        tracker_cmd._print_tracker_state()
+
+#if __name__ == '__main':
+main()
