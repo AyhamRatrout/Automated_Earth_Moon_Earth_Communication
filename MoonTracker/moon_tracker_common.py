@@ -4,6 +4,9 @@ import paho.mqtt.client
 TOPIC_SET_TRACKER_CONFIG = "tracker/set_config"
 TOPIC_TRACKER_CHANGE_NOTIFICATION = "tracker/changed"
 
+def client_state_topic(client_id):
+    return 'tracker/connection/{}/state'.format(client_id)
+
 # MQTT Broker Connection info
 MQTT_VERSION = paho.mqtt.client.MQTTv311
 MQTT_BROKER_HOST = "localhost"

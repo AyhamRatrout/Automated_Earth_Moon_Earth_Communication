@@ -7,12 +7,14 @@ import paho.mqtt.publish as mqtt_publish
 from paho.mqtt.client import Client
 from moon_tracker_common import *
 
+MQTT_CLIENT_ID = 'tracker_cmd'
+
 
 class MoonTrackerCmd(object):
 
     def __init__(self):
         self.received_tracker_state = None
-        self.client = Client()
+        self.client = Client(client_id=MQTT_CLIENT_ID)
         self.client.enable_logger()
         self.client.on_connect = self.on_connect
         self.client.connect(MQTT_BROKER_HOST,
@@ -66,7 +68,7 @@ class MoonTrackerCmd(object):
     def on_connect(self, client, userdata, flags, rc):
         client.message_callback_add(TOPIC_TRACKER_CHANGE_NOTIFICATION,
                                     self._receive_tracker_state)
-        client.subscribe(TOPIC_TRACKER_CHANGE_NOTIFICATION)
+        client.subscribe(TOPIC_TRACKER_CHANGE_NOTIFICATION, qos=1)
 
     def update_tracker_state(self):
         args = self.build_argument_parser().parse_args()
@@ -81,10 +83,12 @@ class MoonTrackerCmd(object):
             self.received_tracker_state['on'] = False
         if args.reset is not None:
             self.received_tracker_state['reset'] = args.reset
+            
+        self.received_tracker_state['client'] = MQTT_CLIENT_ID
 
         self.client.publish(TOPIC_SET_TRACKER_CONFIG,
                             json.dumps(self.received_tracker_state
-                                ).encode('utf-8'))
+                                ).encode('utf-8'), qos=1)
         sleep(0.1)
         self.client.loop_stop()
 
