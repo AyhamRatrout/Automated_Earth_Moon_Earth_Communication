@@ -32,32 +32,37 @@ class MoonTrackerApp(App):
     gpio17_pressed = BooleanProperty(False)
 
     def on_start(self):
+        self.azimuth_driver = MoonTrackerAzimuthDriver()
+        self.elevation_driver = MoonTrackerElevationDriver()
         self.set_up_GPIO_and_IP_popup()
 
     def on_moontracker_is_on(self, instance, value):
         if not value:
-            self.azimuth = 0
-            self.elevation = 0
+            Clock.schedule_once(lambda dt: self._update_values_and_motors(0.0, 0.0), 0.01)
+            print('off')
         else:
-            self.azimuth = 5
-            self.elevation = 10
-        Clock.schedule_once(lambda dt: self._update_azimuth_motor(), 0.01)
-        Clock.schedule_once(lambda dt: self._update_elevation_motor(), 0.01)
+            print('on')
 
     def on_moontracker_is_reset(self, instance, value):
-        if self.moontracker_is_on:
-            self.azimuth = 0
-            self.elevation = 0
-            Clock.schedule_once(lambda dt: self._update_azimuth_motor())
-            Clock.schedule_once(lambda dt: self._update_elevation_motor())
+        if value and self.moontracker_is_on:
+            Clock.schedule_once(lambda dt: self._update_values_and_motors(0.0, 0.0), 0.01)
+            print('reset')
 
-    def _update_azimuth_motor(self):
-        print(self.azimuth)
-        
+    def _update_values_and_motors(self, new_azimuth, new_elevation):
+        if fabs(self.azimuth - new_azimuth) > TOLERANCE:
+            Clock.schedule_once(lambda dt: self._update_azimuth_motor(new_azimuth - self.azimuth), 0.01)
+            self.azimuth = new_azimuth
+            print('updating azimuth...')
+        if fabs(self.elevation - new_elevation) > TOLERANCE:
+            Clock.schedule_once(lambda dt: self._update_elevation_motor(new_elevation - self.elevation), 0.01)
+            self.elevation = new_elevation
+            print('updating elevation...')
 
-    def _update_elevation_motor(self):
-        print(self.elevation)
-        
+    def _update_azimuth_motor(self, delta_azimuth):
+        print('azimuth updated!')
+
+    def _update_elevation_motor(self, delta_elevation):
+        print('elevation updated!')
 
     def set_up_GPIO_and_IP_popup(self):
         self.pi = pigpio.pi()
