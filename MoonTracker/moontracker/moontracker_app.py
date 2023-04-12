@@ -26,45 +26,38 @@ TOLERANCE = 0.25
 
 class MoonTrackerApp(App):
 
-    _azimuth = NumericProperty(5)
-    _elevation = NumericProperty(10)
-
-    def _get_azimuth(self):
-        return self._azimuth
-
-    def _set_azimuth(self, value):
-        if fabs(self.azimuth - value) > TOLERANCE:
-            self._azimuth = value
-
-    def _get_elevation(self):
-        return self._elevation
-
-    def _set_elevation(self):
-        if fabs(self.elevation - value) > TOLERANCE:
-            self._elevation = value
-
-    azimuth = AliasProperty(_get_azimuth, _set_azimuth, blind=['_azimuth'])
-    elevation = AliasProperty(_get_elevation, _set_elevation, bind=['_elevation'])
+    azimuth = NumericProperty(5)
+    elevation = NumericProperty(10)
     moontracker_is_on = BooleanProperty(False)
-    moontracker_is_reset = BooleanProperty(False)
     gpio17_pressed = BooleanProperty(False)
 
     def on_start(self):
         self.set_up_GPIO_and_IP_popup()
 
     def on_moontracker_is_on(self, instance, value):
-        #Clock.schedule_once()
-        pass
+        if not value:
+            self.azimuth = 0
+            self.elevation = 0
+        else:
+            self.azimuth = 5
+            self.elevation = 10
+        Clock.schedule_once(lambda dt: self._update_azimuth_motor(), 0.01)
+        Clock.schedule_once(lambda dt: self._update_elevation_motor(), 0.01)
 
     def on_moontracker_is_reset(self, instance, value):
-        #Clock.schedule_once()
-        pass
+        if self.moontracker_is_on:
+            self.azimuth = 0
+            self.elevation = 0
+            Clock.schedule_once(lambda dt: self._update_azimuth_motor())
+            Clock.schedule_once(lambda dt: self._update_elevation_motor())
 
     def _update_azimuth_motor(self):
-        pass
+        print(self.azimuth)
+        
 
     def _update_elevation_motor(self):
-        pass
+        print(self.elevation)
+        
 
     def set_up_GPIO_and_IP_popup(self):
         self.pi = pigpio.pi()

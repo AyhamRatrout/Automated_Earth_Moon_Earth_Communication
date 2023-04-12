@@ -37,8 +37,8 @@ BoxLayout:
             id: button_reset
             image: 'images/reset_button_green.png'
             text: ''
-            on_press: app.moontracker_is_reset = True
-            on_release: app.moontracker_is_reset = False
+            on_press: app.on_moontracker_is_reset(None, True)
+            #on_release: app.on_moontracker_is_reset
     BoxLayout:
         orientation: 'vertical'
         size_hint_y: 0.005
