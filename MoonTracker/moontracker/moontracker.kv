@@ -20,13 +20,13 @@ BoxLayout:
         size_hint_y: 0.45
         Label:
             id: azimuth_position_display
-            text: 'Azimuth Position: ' + str(app._azimuth)
+            text: 'Azimuth Position: ' + str(app.azimuth)
             valign: 'middle'
             color: black
             bold: True
         Label:
             id: elevation_position_display
-            text: 'Elevation Position: ' + str(app._elevation)
+            text: 'Elevation Position: ' + str(app.elevation)
             valign: 'middle'
             color: black
             bold: True
@@ -37,8 +37,8 @@ BoxLayout:
             id: button_reset
             image: 'images/reset_button_green.png'
             text: ''
-            #on_press: app.reset_status = True
-            #on_release: app.reset_status = False
+            on_press: app.moontracker_is_reset = True
+            on_release: app.moontracker_is_reset = False
     BoxLayout:
         orientation: 'vertical'
         size_hint_y: 0.005
@@ -49,6 +49,6 @@ BoxLayout:
             id: button_onoff
             image: 'images/power_icon_light.png'
             text: ''
-            #state: 'down' if app.moontracker_is_on else 'normal'
-            #on_state:  app.moontracker_is_on = True if self.state == 'down' else False
+            state: 'down' if app.moontracker_is_on else 'normal'
+            on_state:  app.moontracker_is_on = True if self.state == 'down' else False
             

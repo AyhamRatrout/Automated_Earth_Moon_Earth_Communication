@@ -7,6 +7,5 @@ class MoonTrackerAzimuthDriver(object):
     def __init__(self):
         self.pi = pigpio.pi()
 
-    def set_azimuth_position(self, azimuth, is_on):
-        if is_on:
-            pass
+    def set_azimuth_position(self, delta_azimuth):
+        print(delta_azimuth)
