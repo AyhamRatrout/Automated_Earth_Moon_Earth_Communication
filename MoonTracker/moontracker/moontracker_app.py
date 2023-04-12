@@ -6,6 +6,8 @@ from kivy.clock import Clock
 from math import fabs
 import platform
 import pigpio
+import random #delete this when testing is done!
+import time
 import moontracker.moontracker_util
 
 if 'arm' not in platform.platform():
@@ -41,6 +43,8 @@ class MoonTrackerApp(App):
             Clock.schedule_once(lambda dt: self._update_values_and_motors(0.0, 0.0), 0.01)
             print('off')
         else:
+            self.azimuth = random.randint(0, 360)
+            self.elevation = random.randint(0, 180)
             print('on')
 
     def on_moontracker_is_reset(self, instance, value):
@@ -50,18 +54,22 @@ class MoonTrackerApp(App):
 
     def _update_values_and_motors(self, new_azimuth, new_elevation):
         if fabs(self.azimuth - new_azimuth) > TOLERANCE:
-            Clock.schedule_once(lambda dt: self._update_azimuth_motor(new_azimuth - self.azimuth), 0.01)
+            delta_azimuth = new_azimuth - self.azimuth
+            Clock.schedule_once(lambda dt: self._update_azimuth_motor(delta_azimuth), 0.01)
             self.azimuth = new_azimuth
             print('updating azimuth...')
         if fabs(self.elevation - new_elevation) > TOLERANCE:
-            Clock.schedule_once(lambda dt: self._update_elevation_motor(new_elevation - self.elevation), 0.01)
+            delta_elevation = new_elevation - self.elevation
+            Clock.schedule_once(lambda dt: self._update_elevation_motor(delta_elevation), 0.01)
             self.elevation = new_elevation
             print('updating elevation...')
 
     def _update_azimuth_motor(self, delta_azimuth):
+        Clock.schedule_once(lambda st: self.azimuth_driver.set_azimuth_position(delta_azimuth), 0.01)
         print('azimuth updated!')
 
     def _update_elevation_motor(self, delta_elevation):
+        Clock.schedule_once(lambda dt: self.elevation_driver.set_elevation_position(delta_elevation), 0.01)
         print('elevation updated!')
 
     def set_up_GPIO_and_IP_popup(self):

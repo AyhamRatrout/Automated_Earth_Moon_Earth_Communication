@@ -8,4 +8,4 @@ class MoonTrackerAzimuthDriver(object):
         self.pi = pigpio.pi()
 
     def set_azimuth_position(self, delta_azimuth):
-        print(delta_azimuth)
+        print('received an azimuth delta of: ' + str(delta_azimuth))
