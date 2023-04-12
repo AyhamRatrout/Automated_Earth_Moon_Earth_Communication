@@ -1,0 +1,61 @@
+#!/usr/bin/env python3
+import json
+import sys
+import argparse
+from time import sleep
+import paho.mqtt.publish as mqtt_publish
+from paho.mqtt.client import Client
+from moontracker_common import *
+
+
+class MoonTrackerCmd(object):
+
+    def __init__(self):
+        self.received_moontracker_state = None
+        self.client = Client()
+        self.client.enable_logger()
+        self.client.on_connect = self.on_connect
+        self.client.connect(MQTT_BROKER_HOST,
+                            port=MQTT_BROKER_PORT,
+                            keepalive=MQTT_BROKER_KEEP_ALIVE_SECS)
+        self._wait_for_moontracker_state()
+        self.client.loop_start()
+
+    def build_argument_parser(self):
+        parser = argparse.ArgumentParser()
+        return parser
+
+    def _receive_moontracker_state(self, client, userdata, message):
+        self.received_moontracker_state = json.loads(message.payload.decode('utf-8'))
+
+    def _print_moontracker_state(self):
+        pass
+
+    def on_connect(self, client, userdata, flags, rc):
+        client.message_callback_add(TOPIC_TRACKER_CHANGE_NOTIFICATION,
+                                    self._receive_moontracker_state)
+        client.subscribe(TOPIC_TRACKER_CHANGE_NOTIFICATION)
+
+    def update_moontracker_state(self):
+        args = self.build_argument_parser().parse_args()
+        sleep(0.1)
+        self.client.loop_stop()
+
+    def _wait_for_moontracker_state(self):
+        for _ in range(10):
+            if self.received_moontracker_state:
+                return
+            self.client.loop(timeout=0.05)
+        raise Exception("Timeout waiting for moontracker state")
+
+
+def main():
+    moontracker_cmd = MoonTrackerCmd()
+
+    if len(sys.argv) > 1:
+        moontracker_cmd.update_moontracker_state()
+    else:
+        moontracker_cmd._print_moontracker_state()
+
+if __name__ == 'main':
+    main()
