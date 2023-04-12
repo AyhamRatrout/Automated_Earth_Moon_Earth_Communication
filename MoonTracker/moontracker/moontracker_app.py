@@ -18,8 +18,8 @@ if 'arm' not in platform.platform():
             pass
 
 else:
-    from drivers.moontracker_azimuth_driver import MoonTrackerAzimuthDriver
-    from drivers.moontracker_elevtion_driver import MoonTrackerElevationDriver
+    from .drivers.moontracker_azimuth_driver import MoonTrackerAzimuthDriver
+    from .drivers.moontracker_elevation_driver import MoonTrackerElevationDriver
 
 
 TOLERANCE = 0.25
