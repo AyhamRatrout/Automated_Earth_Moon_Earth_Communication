@@ -11,7 +11,7 @@ from moontracker_common import *
 class MoonTrackerCmd(object):
 
     def __init__(self):
-        self.received_moontracker_state = None
+        self.received_moontracker_state = {'azimuth': 0, 'elevation': 0, 'on': True}#None
         self.client = Client()
         self.client.enable_logger()
         self.client.on_connect = self.on_connect
@@ -22,14 +22,45 @@ class MoonTrackerCmd(object):
         self.client.loop_start()
 
     def build_argument_parser(self):
+
+        def azimuth_range(value):
+            value = float(value)
+            if (0.0 > value or value > 360.0):
+                raise argparse.ArgumentTypeError('Azimuth angle must be between 0.0 and 360.0 degrees')
+            return value
+
+        def elevation_range(value):
+            value = float(value)
+            if (0.0 > value or value > 180.0):
+                raise argparse.ArgumentTypeError('Elevation angle must be between 0.0 and 180.0 degrees')
+            return value
+
         parser = argparse.ArgumentParser()
+
+        parser.add_argument('-a', '--azimuth', default=None,
+                            type=azimuth_range, help='Azimuth angle between 0.0 and 360.0 degrees.')
+        parser.add_argument('-e', '--elevation', default=None,
+                            type=elevation_range, help='Elevation angle between 0.0 and 180.0 degrees.')
+
+        on_off_group = parser.add_mutually_exclusive_group()
+        on_off_group.add_argument('--on', action='store_true', default=None,
+                                  help='Turns the moon tracker device on when set to true.')
+        on_off_group.add_argument('--off', action='store_true', default=None,
+                                  help='Turns the moon tracker device off when set to false.')
+
+        parser.add_argument('-r', '--reset', action='store_true', default=None,
+                            help="Resets the moon tracker's position if set to true.")
+
         return parser
 
     def _receive_moontracker_state(self, client, userdata, message):
         self.received_moontracker_state = json.loads(message.payload.decode('utf-8'))
 
     def _print_moontracker_state(self):
-        pass
+        print("Azimuth: {} Elevation: {} On: {}".format(
+            self.received_moontracker_state['azimuth'],
+            self.received_moontracker_state['elevation'],
+            self.received_moontracker_state['on']))
 
     def on_connect(self, client, userdata, flags, rc):
         client.message_callback_add(TOPIC_TRACKER_CHANGE_NOTIFICATION,
@@ -38,6 +69,32 @@ class MoonTrackerCmd(object):
 
     def update_moontracker_state(self):
         args = self.build_argument_parser().parse_args()
+
+        if args.reset is not None:
+            if not self.received_moontracker_state['on'] or (
+                self.received_moontracker_state['azimuth'] == 0 and
+                self.received_moontracker_state['elevation'] == 0):
+                print('invalid')
+                return
+            else:
+                self.received_moontracker_state['azimuth'] = 0.0
+                self.received_moontracker_state['elevation'] = 0.0
+                print('reset')
+
+        else:
+            if args.azimuth is not None:
+                self.received_moontracker_state['azimuth'] = args.azimuth
+            if args.elevation is not None:
+                self.received_moontracker_state['elevation'] = args.elevation
+            if args.on is not None:
+                self.received_moontracker_state['on'] = True
+            if args.off is not None:
+                self.received_moontracker_state['on'] = False
+
+        self.client.publish(TOPIC_SET_TRACKER_CONFIG,
+                            json.dumps(self.received_moontracker_state
+                                ).encode('utf-8'))
+
         sleep(0.1)
         self.client.loop_stop()
 
@@ -57,5 +114,5 @@ def main():
     else:
         moontracker_cmd._print_moontracker_state()
 
-if __name__ == 'main':
+if __name__ == '__main__':
     main()
