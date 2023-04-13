@@ -3,7 +3,7 @@ import paho.mqtt.client
 # MQTT Topic Names
 TOPIC_SET_TRACKER_CONFIG = "moontracker/set_config"
 TOPIC_TRACKER_CHANGE_NOTIFICATION = "moontracker/changed"
-TOPIC_TRACKER_RESET_NOTIFICATION = "moontracker/reset"
+#TOPIC_TRACKER_RESET_NOTIFICATION = "moontracker/reset"
 
 # MQTT Broker Connection info
 MQTT_VERSION = paho.mqtt.client.MQTTv311
