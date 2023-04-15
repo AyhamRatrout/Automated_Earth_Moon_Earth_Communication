@@ -1,5 +1,8 @@
 import paho.mqtt.client
 
+# Global Variables
+FP_DIGITS = 2
+
 # MQTT Topic Names
 TOPIC_SET_TRACKER_CONFIG = "moontracker/set_config"
 TOPIC_TRACKER_CHANGE_NOTIFICATION = "moontracker/changed"

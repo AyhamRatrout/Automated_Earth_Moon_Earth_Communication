@@ -1,14 +1,27 @@
 import json
 import pigpio
 import shelve
+import platform
 import paho.mqtt.client as mqtt
 from moontracker_common import *
+
+if 'arm' not in platform.platform():
+    class MoonTrackerAzimuthDriver(object):
+        def set_azimuth_position(self, delta_azimuth):
+            pass
+
+    class MoonTrackerElevationDriver(object):
+        def set_elevation_position(self, delta_elevation):
+            pass
+
+else:
+    from .moontracker.drivers.moontracker_azimuth_driver import MoonTrackerAzimuthDriver
+    from .moontracker.drivers.moontracker_elevation_driver import MoonTrackerElevationDriver
+
 
 MOONTRACKER_STATE_FILENAME = "moontracker_state"
 
 MQTT_CLIENT_ID = "moontracker_service"
-
-FP_DIGITS = 2
 
 
 class InvalidMoonTrackerConfig(Exception):
@@ -18,8 +31,21 @@ class InvalidMoonTrackerConfig(Exception):
 class MoonTrackerService(object):
 
     def __init__(self):
+        self.azimuth_driver = MoonTrackerAzimuthDriver()
+        self.elevation_driver = MoonTrackerElevationDriver()
         self._client = self._create_and_configure_broker_client()
         self.db = shelve.open(MOONTRACKER_STATE_FILENAME, writeback=True)
+
+        if 'azimuth' not in self.db:
+            self.db['azimuth'] = 0.0 #pull from library here
+        if 'elevation' not in self.db:
+            self.db['elevation'] = 0.0 #pull from library here
+        if 'on' not in self.db:
+            self.db['on'] = True
+        if 'client' not in self.db:
+            self.db['client'] = ''
+
+        # update hardware here
 
     def _create_and_configure_broker_client(self):
         client = mqtt.Client(client_id=MQTT_CLIENT_ID, protocol=MQTT_VERSION)
@@ -42,6 +68,13 @@ class MoonTrackerService(object):
     def default_on_message(self, client, userdata, msg):
         print("Received unexpected message on topic " +
               msg.topic + " with payload '" + str(msg.payload) + "'")
+
+    def on_message_set_config(self, client, userdata, msg):
+        try:
+        except InvalidMoonTrackerConfig:
+            print("" + str(msg.payload))
+
+    def publish_config_change(self):
 
 
 if __name__ == '__main__':
