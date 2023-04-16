@@ -4,8 +4,8 @@ import pigpio
 import shelve
 import platform
 import math
-from threading import Thread
 import paho.mqtt.client as mqtt
+from threading import Thread
 from moontracker_common import *
 
 
@@ -29,6 +29,18 @@ MQTT_CLIENT_ID = "moontracker_service"
 
 
 class InvalidMoonTrackerConfig(Exception):
+    pass
+
+
+class MoonTrackerIsOffException(Exception):
+    pass
+
+
+class SmallAzimuthRotationRequested(Exception):
+    pass
+
+
+class SmallElevationRotationRequested(Exception):
     pass
 
 
@@ -62,8 +74,8 @@ class MoonTrackerService(object):
 
     def serve(self):
         self._client.connect(MQTT_BROKER_HOST,
-                                port=MQTT_BROKER_PORT,
-                                keepalive=MQTT_BROKER_KEEP_ALIVE_SECS)
+                             port=MQTT_BROKER_PORT,
+                             keepalive=MQTT_BROKER_KEEP_ALIVE_SECS)
         self._client.loop_forever()
 
     def on_connect(self, client, userdata, rc, unknown):
@@ -90,11 +102,11 @@ class MoonTrackerService(object):
 
     def publish_config_change(self):
         config = {'azimuth': self.get_current_azimuth(),
-                    'elevation': self.get_current_elevation(),
-                    'on': self.get_current_onoff_status(),
-                    'client': self.get_last_client()}
+                  'elevation': self.get_current_elevation(),
+                  'on': self.get_current_onoff_status(),
+                  'client': self.get_last_client()}
         self._client.publish(TOPIC_SET_TRACKER_CONFIG,
-                            json.dumps(config).encode('utf-8'), retain=True)
+                             json.dumps(config).encode('utf-8'), retain=True)
 
     def get_last_client(self):
         return self.db['client']
@@ -108,8 +120,14 @@ class MoonTrackerService(object):
     def set_current_azimuth(self, new_azimuth):
         if new_azimuth < 0.0 or new_azimuth > 360.0:
             raise InvalidMoonTrackerConfig()
-        self.db['azimuth'] = round(new_azimuth, FP_DIGITS)
-        # update hardware here in a new thread
+        if not self.get_current_onoff_status():
+            raise MoonTrackerIsOffException()
+        if fabs(new_azimuth - self.get_current_azimuth()) < TOLERANCE:
+            raise SmallAzimuthRotationRequested()
+        # Update persisted azimuth position and hardware in a new thread
+        delta_azimuth = new_azimuth - self.get_current_azimuth()
+        thread = Thread(target=self.write_new_azimuth_to_motor, args=(delta_azimuth,))
+        thread.start()
 
     def get_current_elevation(self):
         return round(self.db['elevation'], FP_DIGITS)
@@ -117,8 +135,14 @@ class MoonTrackerService(object):
     def set_current_elevation(self, new_elevation):
         if new_elevation < 0.0 or new_elevation > 180.0:
             raise InvalidMoonTrackerConfig()
-        self.db['elevation'] = round(new_elevation, FP_DIGITS)
-        # update hardware here in a different thread
+        if not self.get_current_onoff_status():
+            raise MoonTrackerIsOffException()
+        if fabs(new_elevation - self.get_current_elevation()) < TOLERANCE:
+            raise SmallElevationRotationRequested()
+        # Update persisted elevtion position and hardware in a new thread
+        delta_elevation = new_elevation - self.get_current_elevation()
+        thread = Thread(target=self.write_new_elevation_to_motor, args=(delta_elevation,))
+        thread.start()
 
     def get_current_onoff_status(self):
         return self.db['on']
@@ -128,6 +152,19 @@ class MoonTrackerService(object):
             raise InvalidMoonTrackerConfig()
         self.db['on'] = new_onoff_status
         # update hardware here in a new thread
+
+    def write_new_azimuth_to_motor(self, delta_azimuth):
+        while fabs(delta_azimuth) > TOLERANCE:
+            if delta_azimuth < 0:
+                
+            else:
+                
+
+    def write_new_elevation_to_motor(self, delta_elevation):
+        while fabs(delta_elevation) > TOLERANCE:
+            self.elevation_driver.move_elevation_motor(TOLERANCE)
+            if:
+            else:
 
 
 if __name__ == '__main__':

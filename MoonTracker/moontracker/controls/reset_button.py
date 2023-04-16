@@ -8,7 +8,6 @@ class ResetButton(Button):
     image_size = NumericProperty(200.0)
     label_spacing = NumericProperty(5.0)
 
-
     def __init__(self, *args, **kwargs):
         super(ResetButton, self).__init__(*args, **kwargs)
 
