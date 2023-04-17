@@ -1,0 +1,18 @@
+----------------------------------------------------------------------------------------------------------------------------------
+NCDrill File Report For: Qwiic_pHat_for_Raspberry_Pi.PcbDoc   3/22/2023  1:57:50 PM
+----------------------------------------------------------------------------------------------------------------------------------
+
+Layer Pair : Top to Bottom
+ASCII RoundHoles File : Qwiic_pHat_for_Raspberry_Pi.TXT
+
+Tool       Hole Size               Hole Tolerance               Hole Type       Hole Count   Plated         Tool Travel
+----------------------------------------------------------------------------------------------------------------------------------
+T1      5mil (0.127mm)                                            Round             4         PTH        2.42inch (61.51mm)
+T2      20mil (0.508mm)                                           Round             11        PTH        2.77inch (70.25mm)
+T3      28mil (0.711mm)                                           Round             4         PTH        0.21inch (5.33mm)
+T4      40mil (1.016mm)                                           Round             40        PTH        5.00inch (127.00mm)
+T5      120mil (3.048mm)                                          Round             4         NPTH       4.09inch (104.00mm)
+----------------------------------------------------------------------------------------------------------------------------------
+Totals                                                                              63
+
+Total Processing Time (hh:mm:ss) : 00:00:00
