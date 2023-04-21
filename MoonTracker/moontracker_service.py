@@ -60,6 +60,10 @@ class MoonTrackerService(object):
             self.db['on'] = True
         if 'client' not in self.db:
             self.db['client'] = ''
+        if 'azimuth_error' not in self.db:
+            self.db['azimuth_error'] = round(0.0, FP_DIGITS)
+        if 'elevation_error' not in self.db:
+            self.db['elevation_error'] = round(0.0, FP_DIGITS)
 
         # update hardware here
 

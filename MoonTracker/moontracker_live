@@ -1,0 +1,84 @@
+#!/usr/bin/env python3
+import json
+import ephem
+import math
+import threading
+import time
+from paho.mqtt.client import Client
+from moontracker_common import *
+
+
+class MoonTrackerLive(object):
+
+    def __init__(self):
+        self.received_moontracker_state = None
+        self.tracking_event = None
+        self.tracking_thread = None
+        self.client = Client()
+        self.client.enable_logger()
+        self.client.on_connect = self.on_connect
+        self.observer = self._create_and_configure_moon_observer()
+
+    def _create_and_configure_moon_observer(self):
+        observer = ephem.Observer()
+        observer.lon = '-81.6073210895835'
+        observer.lat = '41.501475584208035'
+        observer.elevation = 243
+        return observer
+
+    def _receive_moontracker_state(self, client, userdata, message):
+        self.received_moontracker_state = json.loads(message.payload.decode('utf-8'))
+        if self.received_moontracker_state['on'] and self.tracking_event is None:
+            print('device is on')
+            self.tracking_event = threading.Event()
+            print('event created')
+            self.tracking_thread = threading.Thread(target=self.update_moon_position_live,
+                                                    args=(self.tracking_event,))
+            self.tracking_thread.start()
+
+        if not self.received_moontracker_state['on']:
+            print('tracking thread stopping')
+            self.tracking_event.set()
+            self.tracking_thread.join()
+            self.tracking_event = None
+
+    def on_connect(self, client, userdata, rc, unknown):
+        client.message_callback_add(TOPIC_TRACKER_CHANGE_NOTIFICATION,
+                                    self._receive_moontracker_state)
+        client.subscribe(TOPIC_TRACKER_CHANGE_NOTIFICATION)
+
+    def track(self):
+        self.client.connect(MQTT_BROKER_HOST,
+                             port=MQTT_BROKER_PORT,
+                             keepalive=MQTT_BROKER_KEEP_ALIVE_SECS)
+        self.client.loop_forever()
+
+    def update_moon_position_live(self, event):
+        print('entered callback')
+        while not event.is_set():
+            current_azimuth = round(self._poll_moon_azimuth_live(), FP_DIGITS)
+            current_elevation = round(self._poll_moon_elevation_live(), FP_DIGITS)
+            print(current_azimuth)
+            print(current_elevation)
+            # add logic here to check that the difference is more than the tolerance
+            self.received_moontracker_state['azimuth'] = current_azimuth
+            self.received_moontracker_state['elevation'] = current_elevation
+            self.client.publish(TOPIC_SET_TRACKER_CONFIG,
+                                json.dumps(self.received_moontracker_state
+                                            ).encode('utf-8'))
+            time.sleep(10)
+
+    def _poll_moon_azimuth_live(self):
+        self.observer = self._create_and_configure_moon_observer()
+        moon = ephem.Moon(self.observer)
+        return math.degrees(float(repr(moon.az)))
+
+    def _poll_moon_elevation_live(self):
+        self.observer = self._create_and_configure_moon_observer()
+        moon = ephem.Moon(self.observer)
+        return math.degrees(float(repr(moon.alt)))
+
+
+if __name__ == '__main__':
+    live_moontracker = MoonTrackerLive().track()
+

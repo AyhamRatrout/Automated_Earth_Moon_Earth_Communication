@@ -1,13 +1,16 @@
 from kivy.app import App
-from kivy.properties import BooleanProperty, NumericProperty, AliasProperty
+from kivy.properties import BooleanProperty, NumericProperty
 from kivy.uix.popup import Popup
 from kivy.uix.label import Label
 from kivy.clock import Clock
 from math import fabs
 import platform
 import pigpio
-import random #delete this when testing is done!
+import random
 import time
+import json
+from paho.mqtt.client import Client
+from moontracker_common import *
 import moontracker.moontracker_util
 
 if 'arm' not in platform.platform():
@@ -24,16 +27,18 @@ else:
     from .drivers.moontracker_elevation_driver import MoonTrackerElevationDriver
 
 
-TOLERANCE = 0.25
-
 class MoonTrackerApp(App):
-
+    _updatingUI = False
     azimuth = NumericProperty(5)
     elevation = NumericProperty(10)
     moontracker_is_on = BooleanProperty(False)
     gpio17_pressed = BooleanProperty(False)
 
     def on_start(self):
+        self._publish_clock = None
+        self.mqtt = Client()
+        self.mqtt.enable_logger()
+        self.mqtt.on_connect = self.on_connect
         self.azimuth_driver = MoonTrackerAzimuthDriver()
         self.elevation_driver = MoonTrackerElevationDriver()
         self.set_up_GPIO_and_IP_popup()
@@ -71,6 +76,22 @@ class MoonTrackerApp(App):
     def _update_elevation_motor(self, delta_elevation):
         Clock.schedule_once(lambda dt: self.elevation_driver.set_elevation_position(delta_elevation), 0.01)
         print('elevation updated!')
+
+    def on_connect(self, client, userdata, flags, rc):
+        self.mqtt.subscribe(TOPIC_TRACKER_CHANGE_NOTIFICATION)
+        self.mqtt.message_callback_add(TOPIC_TRACKER_CHANGE_NOTIFICATION,
+                                        self.receive_new_moontracker_state)
+
+    def receive_new_moontracker_state(self, client, userdata, message):
+        new_state = json.loads(message.payload.decode('utf-8'))
+        Clock.schedule_once(lambda dt: self._update_ui(new_state), 0.01)
+
+    def _update_ui(self, new_state):
+        self._updatingUI = True
+        try:
+            pass
+        finally:
+            self._updatingUI = False
 
     def set_up_GPIO_and_IP_popup(self):
         self.pi = pigpio.pi()
