@@ -13,25 +13,12 @@ from paho.mqtt.client import Client
 from moontracker_common import *
 import moontracker.moontracker_util
 
-if 'arm' not in platform.platform():
-    class MoonTrackerAzimuthDriver(object):
-        def set_azimuth_position(self, delta_azimuth):
-            pass
-
-    class MoonTrackerElevationDriver(object):
-        def set_elevation_position(self, delta_elevation):
-            pass
-
-else:
-    from .drivers.moontracker_azimuth_driver import MoonTrackerAzimuthDriver
-    from .drivers.moontracker_elevation_driver import MoonTrackerElevationDriver
-
 
 class MoonTrackerApp(App):
     _updatingUI = False
-    azimuth = NumericProperty(5)
-    elevation = NumericProperty(10)
-    moontracker_is_on = BooleanProperty(False)
+    azimuth = NumericProperty()
+    elevation = NumericProperty()
+    moontracker_is_on = BooleanProperty()
     gpio17_pressed = BooleanProperty(False)
 
     def on_start(self):
@@ -39,43 +26,42 @@ class MoonTrackerApp(App):
         self.mqtt = Client()
         self.mqtt.enable_logger()
         self.mqtt.on_connect = self.on_connect
-        self.azimuth_driver = MoonTrackerAzimuthDriver()
-        self.elevation_driver = MoonTrackerElevationDriver()
+        self.mqtt.connect(MQTT_BROKER_HOST, port=MQTT_BROKER_PORT,
+                          keepalive=MQTT_BROKER_KEEP_ALIVE_SECS)
+        self.mqtt.loop_start()
         self.set_up_GPIO_and_IP_popup()
 
     def on_moontracker_is_on(self, instance, value):
-        if not value:
-            Clock.schedule_once(lambda dt: self._update_values_and_motors(0.0, 0.0), 0.01)
-            print('off')
-        else:
-            self.azimuth = random.randint(0, 360)
-            self.elevation = random.randint(0, 180)
-            print('on')
+        if self._updatingUI:
+            return
+        if self._publish_clock is None:
+            if not value:
+                self.azimuth = 0.0
+                self.elevation = 0.0
+                print('off')
+            else:
+                print('on')
+            self._publish_clock = Clock.schedule_once(
+                    lambda dt: self._update_motors_positions(), 0.01)
 
     def on_moontracker_is_reset(self, instance, value):
-        if value and self.moontracker_is_on:
-            Clock.schedule_once(lambda dt: self._update_values_and_motors(0.0, 0.0), 0.01)
-            print('reset')
+        if self._updatingUI:
+            return
+        if self._publish_clock is None:
+            if value and self.moontracker_is_on:
+                self.azimuth = 0.0
+                self.elevation = 0.0
+                self._publish_clock = Clock.schedule_once(
+                    lambda dt: self._update_motors_positions(), 0.01)
+                print('reset')
 
-    def _update_values_and_motors(self, new_azimuth, new_elevation):
-        if fabs(self.azimuth - new_azimuth) > TOLERANCE:
-            delta_azimuth = new_azimuth - self.azimuth
-            Clock.schedule_once(lambda dt: self._update_azimuth_motor(delta_azimuth), 0.01)
-            self.azimuth = new_azimuth
-            print('updating azimuth...')
-        if fabs(self.elevation - new_elevation) > TOLERANCE:
-            delta_elevation = new_elevation - self.elevation
-            Clock.schedule_once(lambda dt: self._update_elevation_motor(delta_elevation), 0.01)
-            self.elevation = new_elevation
-            print('updating elevation...')
-
-    def _update_azimuth_motor(self, delta_azimuth):
-        Clock.schedule_once(lambda st: self.azimuth_driver.set_azimuth_position(delta_azimuth), 0.01)
-        print('azimuth updated!')
-
-    def _update_elevation_motor(self, delta_elevation):
-        Clock.schedule_once(lambda dt: self.elevation_driver.set_elevation_position(delta_elevation), 0.01)
-        print('elevation updated!')
+    def _update_motors_positions(self):
+            msg = {'azimuth': self.azimuth,
+                   'elevation': self.elevation,
+                   'on': self.moontracker_is_on}
+            self.mqtt.publish(TOPIC_SET_TRACKER_CONFIG,
+                              json.dumps(msg).encode('utf-8'))
+            self._publish_clock = None
 
     def on_connect(self, client, userdata, flags, rc):
         self.mqtt.subscribe(TOPIC_TRACKER_CHANGE_NOTIFICATION)
@@ -89,7 +75,12 @@ class MoonTrackerApp(App):
     def _update_ui(self, new_state):
         self._updatingUI = True
         try:
-            pass
+            if 'azimuth' in new_state:
+                self.azimuth = new_state['azimuth']
+            if 'elevation' in new_state:
+                self.elevation = new_state['elevation']
+            if 'on' in new_state:
+                self.moontracker_is_on = new_state['on']
         finally:
             self._updatingUI = False
 

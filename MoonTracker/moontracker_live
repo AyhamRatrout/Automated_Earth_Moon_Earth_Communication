@@ -36,7 +36,7 @@ class MoonTrackerLive(object):
                                                     args=(self.tracking_event,))
             self.tracking_thread.start()
 
-        if not self.received_moontracker_state['on']:
+        if not self.received_moontracker_state['on'] and not self.tracking_event is None:
             print('tracking thread stopping')
             self.tracking_event.set()
             self.tracking_thread.join()
