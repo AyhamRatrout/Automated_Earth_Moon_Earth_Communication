@@ -12,7 +12,7 @@ from moontracker_common import *
 class MoonTrackerCmd(object):
 
     def __init__(self):
-        self.received_moontracker_state = {'azimuth': 0, 'elevation': 10, 'on': True}#None
+        self.received_moontracker_state = None
         self.client = Client()
         self.client.enable_logger()
         self.client.on_connect = self.on_connect
