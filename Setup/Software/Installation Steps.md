@@ -67,7 +67,7 @@ sudo apt-get install supervisor
 ```
 * Make sure to move all .conf files in the supervisor directory of this repository into /etc/supervisor/conf.d/
 
-## Pyserial
+## Pyserial:
 ```
 sudo pip3 install pyserial
 ```
