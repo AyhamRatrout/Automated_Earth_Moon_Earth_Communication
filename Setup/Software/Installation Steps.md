@@ -23,7 +23,7 @@ echo "set tabsize 4" >> ~/.nanorc
 echo "set tabstospaces" >> ~/.nanorc
 ```
 
-# Installing PiTFT Touchscreen:
+# PiTFT Touchscreen:
 ```
 sudo apt install python3-pip
 cd ~
@@ -40,7 +40,7 @@ sudo dpkg-reconfigure console-setup
 * 6x12 (framebuffer only).
 * Then reboot machine
 
-# Installing Kivy for UI:
+# Kivy for UI:
 ```
 sudo apt-get update
 sudo apt install python3-dev libmtdev1
@@ -48,18 +48,23 @@ sudo pip3 install https://connected-devices.s3.amazonaws.com/Kivy-2.1.0-cp37-cp3
 sudo pip3 install kivy_examples pillow
 ```
 
-# Installing MQTT Communication Broker:
+# MQTT Communication Broker:
 ```
 sudo apt-get update
 sudo apt-get install mosquitto mosquitto-clients -y
 ```
-# Installing Python Paho:
+# Python Paho:
 ```
 sudo pip3 install paho-mqtt
 ```
 
-# Installing Supervisor:
+# Supervisor:
 ```
 sudo apt-get install supervisor
 ```
 * Make sure to move all .conf files in the supervisor directory of this repository into /etc/supervisor/conf.d/
+
+# Pyserial
+```
+sudo pip3 install pyserial
+```
