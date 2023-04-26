@@ -5,7 +5,7 @@
   https://www.adafruit.com/product/2423
   
 ## PCB EME Hat:
-  Custom Made - files are located 
+  Custom Made - files are located https://github.com/AyhamRatrout/Automated_Earth_Moon_Earth_Communication/tree/master/Hardware/PCB
   
 ## SD Card:
   Original used 32GB, but any size works
