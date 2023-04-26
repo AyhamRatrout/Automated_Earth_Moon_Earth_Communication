@@ -1,3 +1,6 @@
+## Installation Steps
+The following describe the steps needed to install each part of the required software.
+
 # Python 3:
 ```
 sudo apt install python3-distutils
